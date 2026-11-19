@@ -1,0 +1,16 @@
+{
+  "name": "NyumbaGestion - Gestion Locative",
+  "short_name": "NyumbaGestion",
+  "description": "Application Web & PWA de Gestion Locative au Burundi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/next.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

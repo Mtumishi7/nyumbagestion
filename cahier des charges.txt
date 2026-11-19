@@ -1,0 +1,2459 @@
+# CAHIER DES CHARGES
+## Application Web de Gestion des Loyers
+
+**Version:** 2.0  
+**Date:** 14 novembre 2025  
+**Lieu:** Burundi  
+**ModÃ¨le:** 100% Gratuit - Open Source
+
+---
+
+## 1. PRÃ‰SENTATION DU PROJET
+
+### 1.1 Contexte
+DÃ©veloppement d'une application web de gestion locative destinÃ©e aux propriÃ©taires immobiliers pour une gestion centralisÃ©e et efficace de leur patrimoine immobilier au Burundi. L'application est conÃ§ue pour Ãªtre totalement gratuite en utilisant des technologies et services open source.
+
+### 1.2 Objectifs
+- Centraliser la gestion de tous les biens immobiliers
+- Automatiser le suivi des paiements de loyers
+- GÃ©rer les locataires et leur associer des biens
+- GÃ©nÃ©rer automatiquement les documents (contrats, quittances, reÃ§us)
+- Suivre la rentabilitÃ© de chaque bien
+- Assurer la traÃ§abilitÃ© complÃ¨te des opÃ©rations
+
+### 1.3 Philosophie Gratuite
+- Technologies open source uniquement
+- HÃ©bergement gratuit ou Ã  coÃ»t minimal
+- Pas d'abonnement ni de frais cachÃ©s
+- Services tiers gratuits (email, stockage)
+- Base de code open source
+
+---
+
+## 2. ARCHITECTURE TECHNIQUE
+
+### 2.1 Stack Technologique (100% Gratuit)
+
+#### Frontend
+- **Framework:** React.js 18+ ou Vue.js 3+
+- **UI Library:** Tailwind CSS (gratuit)
+- **IcÃ´nes:** Lucide React (gratuit)
+- **PDF Generation:** jsPDF + html2pdf.js (gratuit)
+- **Charts:** Chart.js ou Recharts (gratuit)
+- **Form Validation:** React Hook Form (gratuit)
+
+#### Backend
+- **Runtime:** Node.js 18+ LTS
+- **Framework:** Express.js
+- **API:** RESTful
+- **Authentication:** JWT + bcrypt
+- **File Upload:** Multer
+- **Email:** Nodemailer avec Gmail (gratuit jusqu'Ã  500 emails/jour)
+- **Validation:** Joi ou Yup
+
+#### Base de donnÃ©es
+- **SGBD:** PostgreSQL 15+
+- **ORM:** Sequelize ou Prisma
+- **Migration:** Sequelize CLI
+
+#### Infrastructure
+- **HÃ©bergement Backend:** Render.com (gratuit) ou Railway.app (gratuit)
+- **HÃ©bergement Frontend:** Vercel ou Netlify (gratuit)
+- **Base de donnÃ©es:** Supabase (gratuit jusqu'Ã  500MB) ou ElephantSQL (gratuit 20MB)
+- **Stockage Fichiers:** Cloudinary (gratuit 25GB/mois) ou Supabase Storage
+- **ContrÃ´le de version:** GitHub (gratuit)
+
+### 2.2 Architecture de l'Application
+```
+Frontend (React/Vue) <--> Backend API (Express) <--> PostgreSQL
+                              |
+                              +--> Services (Email, Storage, PDF)
+```
+
+---
+
+## 3. EXIGENCES FONCTIONNELLES
+
+### 3.1 Gestion des Utilisateurs
+
+#### 3.1.1 Types d'utilisateurs (2 rÃ´les uniquement)
+
+**1. Super Administrateur (PropriÃ©taire)**
+- AccÃ¨s complet Ã  toutes les fonctionnalitÃ©s
+- Gestion de tous les biens immobiliers
+- Gestion de tous les locataires
+- Gestion des gestionnaires
+- AccÃ¨s Ã  tous les rapports financiers
+- Configuration du systÃ¨me
+- Compte unique et principal
+
+**2. Gestionnaire**
+- Gestion des biens assignÃ©s
+- Gestion des locataires des biens assignÃ©s
+- Enregistrement des paiements
+- GÃ©nÃ©ration de quittances et reÃ§us
+- Consultation des rapports
+- Pas d'accÃ¨s aux paramÃ¨tres globaux
+- Peut gÃ©rer plusieurs biens assignÃ©s par l'admin
+
+#### 3.1.2 Authentification et SÃ©curitÃ©
+- Inscription (rÃ©servÃ©e au Super Admin lors de l'installation)
+- Connexion sÃ©curisÃ©e (email + mot de passe)
+- Hash des mots de passe avec bcrypt (10 rounds)
+- Tokens JWT avec expiration (24h)
+- Refresh tokens pour sessions prolongÃ©es
+- RÃ©cupÃ©ration de mot de passe par email
+- Changement de mot de passe obligatoire Ã  la premiÃ¨re connexion (gestionnaires)
+- DÃ©connexion automatique aprÃ¨s inactivitÃ© (30 minutes)
+- Historique des connexions (date, heure, IP)
+- Blocage temporaire aprÃ¨s 5 tentatives Ã©chouÃ©es
+
+#### 3.1.3 FonctionnalitÃ©s
+- **Super Admin peut:**
+  - CrÃ©er des comptes gestionnaires
+  - Assigner/RÃ©assigner des biens aux gestionnaires
+  - DÃ©sactiver/Activer des comptes gestionnaires
+  - RÃ©initialiser les mots de passe
+  - Voir tous les logs d'activitÃ©
+  
+- **Gestionnaire peut:**
+  - Modifier son propre profil
+  - Changer son mot de passe
+  - Voir uniquement ses biens assignÃ©s
+
+### 3.2 Gestion des Biens Immobiliers
+
+#### 3.2.1 Types de Biens et Attributs Dynamiques
+
+Le systÃ¨me propose **5 types de biens** avec des attributs spÃ©cifiques :
+
+**1. APPARTEMENT**
+- Informations de base:
+  - Nom/RÃ©fÃ©rence du bien (unique)
+  - Adresse complÃ¨te (quartier, commune, avenue, numÃ©ro)
+  - Ville
+  - Province
+  - CoordonnÃ©es GPS (latitude, longitude) - optionnel
+- CaractÃ©ristiques spÃ©cifiques:
+  - Ã‰tage
+  - NumÃ©ro d'appartement
+  - Surface habitable (mÂ²)
+  - Nombre de chambres
+  - Nombre de salons
+  - Nombre de salles de bain
+  - Nombre de toilettes
+  - Cuisine (Ã©quipÃ©e/non Ã©quipÃ©e)
+  - Balcon (oui/non)
+  - Parking (oui/non, nombre de places)
+  - Ascenseur (oui/non)
+  - MeublÃ© (oui/non)
+- Ã‰quipements:
+  - Eau courante (oui/non)
+  - Ã‰lectricitÃ© (compteur individuel/collectif)
+  - SÃ©curitÃ© (gardien, camÃ©ras, portail)
+  - Internet/Wifi disponible
+  - Climatisation
+  - Chauffage
+
+**2. MAISON**
+- Informations de base: (identiques Ã  appartement)
+- CaractÃ©ristiques spÃ©cifiques:
+  - Type de maison (villa, duplex, simple)
+  - Surface du terrain (mÂ²)
+  - Surface habitable (mÂ²)
+  - Nombre de niveaux/Ã©tages
+  - Nombre de chambres
+  - Nombre de salons
+  - Nombre de salles de bain
+  - Nombre de toilettes
+  - Cuisine (Ã©quipÃ©e/non Ã©quipÃ©e)
+  - Garage (oui/non, nombre de places)
+  - Jardin (oui/non, surface)
+  - ClÃ´ture (oui/non, type)
+  - Piscine (oui/non)
+  - DÃ©pendances (chambres de domestique, etc.)
+  - MeublÃ©e (oui/non)
+- Ã‰quipements: (identiques Ã  appartement + spÃ©cifiques)
+  - Forage/Puits
+  - Panneaux solaires
+  - Groupe Ã©lectrogÃ¨ne
+
+**3. COMMERCE / LOCAL COMMERCIAL**
+- Informations de base: (identiques aux autres)
+- CaractÃ©ristiques spÃ©cifiques:
+  - Type de commerce (boutique, bureau, entrepÃ´t, showroom)
+  - Surface commerciale (mÂ²)
+  - Nombre de piÃ¨ces/bureaux
+  - Vitrine (oui/non)
+  - Ã‰tage
+  - AccÃ¨s PMR (personnes Ã  mobilitÃ© rÃ©duite)
+  - Sanitaires (nombre)
+  - Kitchenette (oui/non)
+  - Parking client (nombre de places)
+  - Zone de chargement (oui/non)
+  - Hauteur sous plafond (mÃ¨tres)
+  - Climatisation
+  - SystÃ¨me anti-incendie
+- CaractÃ©ristiques commerciales:
+  - VisibilitÃ© (bonne/moyenne/faible)
+  - Passage piÃ©ton (Ã©levÃ©/moyen/faible)
+  - ActivitÃ© autorisÃ©e (description)
+
+**4. TERRAIN**
+- Informations de base:
+  - Nom/RÃ©fÃ©rence du terrain
+  - Localisation (quartier, commune, avenue)
+  - Ville
+  - Province
+  - CoordonnÃ©es GPS (latitude, longitude)
+- CaractÃ©ristiques spÃ©cifiques:
+  - Surface totale (mÂ² ou hectares)
+  - Forme du terrain (rÃ©gulier/irrÃ©gulier)
+  - Type de terrain (constructible, agricole, commercial)
+  - Topographie (plat, en pente, vallonnÃ©)
+  - Nature du sol
+  - Titre de propriÃ©tÃ© (numÃ©ro)
+  - ViabilisÃ© (oui/non)
+  - ClÃ´turÃ© (oui/non, type de clÃ´ture)
+  - AccÃ¨s route (oui/non, type de route)
+  - FaÃ§ade (longueur en mÃ¨tres)
+- AccÃ¨s aux rÃ©seaux:
+  - Eau (disponible/Ã  proximitÃ©/absent)
+  - Ã‰lectricitÃ© (disponible/Ã  proximitÃ©/absent)
+  - Assainissement
+  - TÃ©lÃ©phone/Internet
+
+**5. STUDIO**
+- Informations de base: (identiques aux autres)
+- CaractÃ©ristiques spÃ©cifiques:
+  - Surface habitable (mÂ²)
+  - Ã‰tage
+  - NumÃ©ro du studio
+  - PiÃ¨ce principale (salon/chambre combinÃ©)
+  - Coin cuisine (kitchenette intÃ©grÃ©e/sÃ©parÃ©e)
+  - Salle de bain (avec WC intÃ©grÃ©/sÃ©parÃ©)
+  - MeublÃ© (oui/non)
+  - Balcon (oui/non)
+  - Parking (oui/non)
+  - Rangements (placards)
+- Ã‰quipements: (identiques Ã  appartement)
+
+#### 3.2.2 Informations Communes Ã  Tous les Biens
+
+**Informations FinanciÃ¨res:**
+- Montant du loyer mensuel (FBU)
+- Charges mensuelles (FBU)
+- Caution/DÃ©pÃ´t de garantie (montant en FBU)
+- Frais de dossier (le cas Ã©chÃ©ant)
+- Taxe fonciÃ¨re annuelle (FBU)
+- Frais d'assurance annuels
+
+**Informations Administratives:**
+- Date d'acquisition du bien
+- Date de mise en location
+- NumÃ©ro de titre de propriÃ©tÃ©
+- RÃ©fÃ©rence cadastrale
+- Certificat d'urbanisme (oui/non)
+- Assurance du bien (compagnie, numÃ©ro de police, date d'Ã©chÃ©ance)
+
+**Ã‰tat et Statut:**
+- Ã‰tat gÃ©nÃ©ral (excellent, bon, moyen, Ã  rÃ©nover)
+- Statut actuel (disponible, louÃ©, en maintenance, hors service)
+- Date du dernier entretien
+- Date de la derniÃ¨re rÃ©novation
+
+**MÃ©dias et Documents:**
+- Photos du bien (minimum 5, maximum 20)
+- Photo principale (mise en avant)
+- Plans du bien (PDF)
+- Documents de propriÃ©tÃ© (PDF)
+- Factures d'entretien (PDF)
+
+**Gestion:**
+- Gestionnaire assignÃ© (si applicable)
+- Date d'assignation
+- Notes internes (observations, historique)
+- Date de crÃ©ation de la fiche
+- DerniÃ¨re modification
+
+#### 3.2.3 FonctionnalitÃ©s du Module Biens
+
+**Ajout de Bien (Formulaire Dynamique):**
+1. Ã‰tape 1: SÃ©lection du type de bien
+2. Ã‰tape 2: Formulaire s'adapte automatiquement selon le type
+3. Ã‰tape 3: Upload des photos et documents
+4. Ã‰tape 4: Informations financiÃ¨res
+5. Ã‰tape 5: Validation et enregistrement
+
+**Gestion des Biens:**
+- Liste complÃ¨te avec filtres avancÃ©s (par type, statut, gestionnaire, ville)
+- Recherche globale (par nom, adresse, rÃ©fÃ©rence)
+- Vue en cartes (grid) avec photos
+- Vue en liste (tableau)
+- Vue sur carte gÃ©ographique (si coordonnÃ©es GPS)
+- Tri (par prix, surface, date d'ajout, statut)
+- Ã‰dition complÃ¨te du bien
+- Duplication de fiche (pour biens similaires)
+- Changement de statut en un clic
+- Archivage des biens vendus/non disponibles
+- Suppression (avec confirmation et vÃ©rification)
+
+**Tableau de Bord des Biens:**
+- Nombre total de biens
+- Biens par type (diagramme en camembert)
+- Biens par statut (disponible, louÃ©, maintenance)
+- Taux d'occupation global (%)
+- Revenus mensuels par bien
+- Biens les plus rentables
+- Biens nÃ©cessitant une maintenance
+
+**Historique et TraÃ§abilitÃ©:**
+- Historique complet de tous les locataires
+- Historique des contrats
+- Historique des paiements
+- Historique des maintenances
+- Journal des modifications de la fiche
+
+**Export et Impression:**
+- Fiche complÃ¨te du bien (PDF)
+- Liste des biens (Excel/CSV)
+- Rapport d'occupation
+- Dossier complet avec tous les documents
+
+### 3.3 Gestion des Locataires
+
+#### 3.3.1 Informations du Locataire
+
+**IdentitÃ©:**
+- Nom complet
+- PrÃ©noms
+- Sexe (M/F)
+- Date de naissance
+- Lieu de naissance
+- NationalitÃ©
+- Ã‰tat civil (cÃ©libataire, mariÃ©, divorcÃ©, veuf)
+- Nombre de personnes Ã  charge
+
+**Documents d'IdentitÃ©:**
+- Type de piÃ¨ce (CNI, Passeport, Permis de conduire)
+- NumÃ©ro de la piÃ¨ce
+- Date de dÃ©livrance
+- Date d'expiration
+- Lieu de dÃ©livrance
+- Photo de la piÃ¨ce (upload)
+
+**CoordonnÃ©es:**
+- Adresse actuelle complÃ¨te
+- Ville
+- Province/Ã‰tat
+- TÃ©lÃ©phone principal
+- TÃ©lÃ©phone secondaire (optionnel)
+- Email principal
+- Email secondaire (optionnel)
+- WhatsApp (mÃªme numÃ©ro ou diffÃ©rent)
+
+**Situation Professionnelle:**
+- Statut (salariÃ©, indÃ©pendant, entrepreneur, Ã©tudiant, retraitÃ©, sans emploi)
+- Profession/MÃ©tier
+- Employeur (nom de l'entreprise)
+- Adresse de l'employeur
+- TÃ©lÃ©phone de l'employeur
+- Revenus mensuels (dÃ©claratifs)
+- AnciennetÃ© dans l'emploi
+
+**RÃ©fÃ©rences:**
+- Nom du rÃ©pondant 1
+- Lien avec le locataire (famille, ami, collÃ¨gue)
+- TÃ©lÃ©phone du rÃ©pondant 1
+- Nom du rÃ©pondant 2 (optionnel)
+- TÃ©lÃ©phone du rÃ©pondant 2
+
+**Personne Ã  Contacter en Urgence:**
+- Nom complet
+- Lien de parentÃ©
+- TÃ©lÃ©phone principal
+- TÃ©lÃ©phone secondaire
+- Adresse
+
+**Historique Locatif:**
+- Ancien propriÃ©taire (nom)
+- TÃ©lÃ©phone de l'ancien propriÃ©taire
+- Adresse du prÃ©cÃ©dent logement
+- DurÃ©e du prÃ©cÃ©dent bail
+- Motif de dÃ©part
+- Recommandation (oui/non)
+
+**Association au Bien:**
+- **RÃ¨gle importante:** Un locataire ne peut Ãªtre associÃ© qu'Ã  un bien dont le statut est "DISPONIBLE"
+- Lors de l'association, le statut du bien passe automatiquement Ã  "LOUÃ‰"
+- Un locataire peut avoir un historique de plusieurs biens (succession dans le temps)
+- Un bien ne peut avoir qu'un seul locataire actif Ã  la fois
+
+**Informations Administratives:**
+- Date d'entrÃ©e dans le bien
+- Photo du locataire (optionnel)
+- Statut du locataire (actif, ancien, suspendu)
+- Ã‰valuation du locataire (1 Ã  5 Ã©toiles)
+- Notes internes (observations, comportement de paiement)
+- Date de crÃ©ation de la fiche
+- CrÃ©Ã© par (admin/gestionnaire)
+- DerniÃ¨re modification
+
+**Documents du Locataire:**
+- Copie de la piÃ¨ce d'identitÃ©
+- Photo d'identitÃ©
+- Attestation de travail
+- Bulletin de salaire (3 derniers mois)
+- Contrat de location signÃ©
+- Ã‰tat des lieux d'entrÃ©e signÃ©
+- Quittances de paiement
+- Autres documents (Ã  prÃ©ciser)
+
+#### 3.3.2 FonctionnalitÃ©s du Module Locataires
+
+**Ajout de Locataire:**
+1. Formulaire en plusieurs sections (identitÃ©, coordonnÃ©es, profession, rÃ©fÃ©rences)
+2. Upload de documents obligatoires
+3. Association Ã  un bien disponible (sÃ©lection dans liste des biens disponibles uniquement)
+4. Validation automatique des donnÃ©es
+5. CrÃ©ation automatique d'un dossier locataire
+
+**Gestion des Locataires:**
+- Liste complÃ¨te avec filtres (actifs, anciens, par bien, par gestionnaire)
+- Recherche rapide (nom, tÃ©lÃ©phone, bien)
+- Vue en cartes avec photo
+- Vue en tableau dÃ©taillÃ©
+- Tri (alphabÃ©tique, par date d'entrÃ©e, par bien)
+- Ã‰dition du profil locataire
+- Changement de statut (actif â†” ancien)
+- Transfert vers un autre bien (si dÃ©mÃ©nagement interne)
+- RÃ©siliation (fin de contrat)
+- Suppression (avec vÃ©rifications - impossible si contrats/paiements actifs)
+
+**Dossier Locataire:**
+- Vue complÃ¨te du profil
+- Bien actuellement occupÃ© (avec photo et dÃ©tails)
+- Historique des biens occupÃ©s
+- Historique des contrats
+- Historique complet des paiements (payÃ©s et impayÃ©s)
+- Liste des quittances gÃ©nÃ©rÃ©es
+- Liste des rÃ©clamations/problÃ¨mes signalÃ©s
+- Documents attachÃ©s
+- Notes et observations
+- Ã‰valuation et comportement de paiement
+
+**Tableau de Bord Locataires:**
+- Nombre total de locataires actifs
+- Nouveaux locataires du mois
+- Locataires en retard de paiement
+- Taux de fidÃ©litÃ© (durÃ©e moyenne de location)
+- Locataires par bien
+- Ã‰valuations moyennes
+
+**Alertes et Notifications:**
+- Fin de contrat approchant (30, 15, 7 jours)
+- Retard de paiement
+- Documents expirÃ©s (CNI, etc.)
+- Anniversaire du locataire (optionnel)
+
+**Communication:**
+- Envoi d'email directement depuis la fiche
+- Envoi de SMS (via services locaux)
+- Lien WhatsApp (clic pour ouvrir conversation)
+- Historique des communications
+
+**Export et Impression:**
+- Fiche complÃ¨te du locataire (PDF)
+- Liste des locataires (Excel/CSV)
+- Dossier complet avec documents
+- Rapport de solvabilitÃ©
+
+### 3.4 Gestion des Contrats de Location
+
+#### 3.4.1 Informations Contractuelles
+
+**Identification du Contrat:**
+- NumÃ©ro de contrat (auto-gÃ©nÃ©rÃ©, unique, format: CONT-2025-0001)
+- Type de contrat (habitation, commercial, terrain)
+- Statut (brouillon, actif, expirÃ©, rÃ©siliÃ©)
+- Date de crÃ©ation du contrat
+- CrÃ©Ã© par (admin/gestionnaire)
+
+**Parties du Contrat:**
+- **Bailleur:** Informations du Super Admin (nom, adresse, tÃ©lÃ©phone, email)
+- **Locataire:** RÃ©fÃ©rence au locataire (avec toutes ses infos)
+- Co-locataires (optionnel, liste de noms et CNI)
+- **Bien louÃ©:** RÃ©fÃ©rence complÃ¨te au bien
+
+**DurÃ©e du Contrat:**
+- Date de dÃ©but du bail
+- DurÃ©e du bail (en mois)
+- Date de fin du bail (calculÃ©e automatiquement)
+- Type de durÃ©e (dÃ©terminÃ©e/indÃ©terminÃ©e)
+- PÃ©riode de prÃ©avis (en mois, gÃ©nÃ©ralement 1 Ã  3 mois)
+- PossibilitÃ© de renouvellement (oui/non)
+- Conditions de renouvellement
+
+**Conditions FinanciÃ¨res:**
+- Montant du loyer mensuel (FBU)
+- Charges mensuelles (FBU)
+- Total mensuel Ã  payer (loyer + charges)
+- Jour d'Ã©chÃ©ance du paiement (1-31 du mois)
+- Mode de paiement acceptÃ© (espÃ¨ces, virement, mobile money)
+- CoordonnÃ©es bancaires pour virement (optionnel)
+- Caution versÃ©e (montant en FBU)
+- Date de versement de la caution
+- Frais de dossier (montant)
+- Date de paiement des frais
+
+**RÃ©vision du Loyer:**
+- RÃ©vision autorisÃ©e (oui/non)
+- FrÃ©quence de rÃ©vision (annuelle, tous les 2 ans)
+- Indice de rÃ©vision (pourcentage fixe ou selon inflation)
+- Date de prochaine rÃ©vision
+
+**Ã‰tat des Lieux:**
+- **Ã‰tat des lieux d'entrÃ©e:**
+  - Date de rÃ©alisation
+  - Ã‰tat gÃ©nÃ©ral (excellent, bon, moyen, mauvais)
+  - Liste des Ã©quipements prÃ©sents
+  - Ã‰tat de chaque piÃ¨ce (description dÃ©taillÃ©e)
+  - Photos (upload multiple)
+  - RelevÃ©s compteurs (eau, Ã©lectricitÃ©)
+  - Observations particuliÃ¨res
+  - Signature du bailleur (date)
+  - Signature du locataire (date)
+  - Document PDF gÃ©nÃ©rÃ© et signÃ©
+
+- **Ã‰tat des lieux de sortie:**
+  - Date de rÃ©alisation
+  - Ã‰tat gÃ©nÃ©ral constatÃ©
+  - Liste des Ã©quipements restituÃ©s
+  - Ã‰tat de chaque piÃ¨ce
+  - Photos (upload multiple)
+  - RelevÃ©s compteurs finaux
+  - DÃ©gradations constatÃ©es (liste et coÃ»ts)
+  - Montant des rÃ©parations Ã  dÃ©duire de la caution
+  - Observations
+  - Signature du bailleur (date)
+  - Signature du locataire (date)
+  - Document PDF gÃ©nÃ©rÃ© et signÃ©
+
+**Clauses et Conditions:**
+- Affectation du bien (usage d'habitation, commercial, etc.)
+- Interdictions (sous-location, activitÃ©s, etc.)
+- Obligations du locataire (entretien courant, assurance, etc.)
+- Obligations du bailleur (grosses rÃ©parations, jouissance paisible)
+- Clause de solidaritÃ© (si co-locataires)
+- Clause rÃ©solutoire (conditions de rÃ©siliation)
+- Clause pÃ©nale (pÃ©nalitÃ©s de retard)
+- PÃ©nalitÃ© de retard (pourcentage ou montant fixe par jour)
+- Conditions de restitution de la caution
+- Autres clauses particuliÃ¨res (texte libre)
+
+**Annexes et Documents:**
+- Contrat de location signÃ© (PDF)
+- Ã‰tat des lieux d'entrÃ©e (PDF)
+- Copie CNI du locataire
+- Titre de propriÃ©tÃ© du bien
+- Attestation d'assurance du bien
+- Autres documents (liste personnalisable)
+
+**Gestion du Contrat:**
+- Signatures:
+  - Date de signature du bailleur
+  - Date de signature du locataire
+  - Contrat signÃ© (oui/non)
+- Renouvellements:
+  - Historique des renouvellements
+  - Conditions de chaque renouvellement
+- Avenants:
+  - Liste des modifications apportÃ©es
+  - Dates des avenants
+  - Documents des avenants (PDF)
+
+**RÃ©siliation:**
+- Date de notification de rÃ©siliation
+- Partie Ã  l'origine (bailleur/locataire)
+- Motif de rÃ©siliation (fin de bail, rupture anticipÃ©e, manquement)
+- Date effective de rÃ©siliation
+- PrÃ©avis respectÃ© (oui/non)
+- PÃ©nalitÃ©s appliquÃ©es (montant)
+- Ã‰tat des lieux de sortie rÃ©alisÃ© (oui/non)
+- Caution restituÃ©e (montant)
+- Date de restitution de la caution
+- Observations finales
+
+**TraÃ§abilitÃ©:**
+- Date de crÃ©ation
+- CrÃ©Ã© par
+- DerniÃ¨re modification
+- ModifiÃ© par
+- Historique des modifications
+
+#### 3.4.2 FonctionnalitÃ©s du Module Contrats
+
+**CrÃ©ation de Contrat:**
+1. **Assistant de crÃ©ation en Ã©tapes:**
+   - Ã‰tape 1: SÃ©lection du bien (liste des biens DISPONIBLES uniquement)
+   - Ã‰tape 2: SÃ©lection du locataire (ou crÃ©ation rapide si nouveau)
+   - Ã‰tape 3: Conditions financiÃ¨res (loyer, charges, caution)
+   - Ã‰tape 4: DurÃ©e et dates (dÃ©but, durÃ©e, Ã©chÃ©ances)
+   - Ã‰tape 5: Clauses et conditions (avec modÃ¨les prÃ©-remplis)
+   - Ã‰tape 6: Upload des documents
+   - Ã‰tape 7: AperÃ§u et validation
+
+2. **GÃ©nÃ©ration automatique:**
+   - NumÃ©ro de contrat unique
+   - Document PDF du contrat (modÃ¨le personnalisable)
+   - Calendrier des paiements (Ã©chÃ©ancier auto-gÃ©nÃ©rÃ©)
+   - PremiÃ¨re ligne de paiement crÃ©Ã©e automatiquement
+
+3. **Actions post-crÃ©ation:**
+   - Changement automatique du statut du bien (DISPONIBLE â†’ LOUÃ‰)
+   - Association du locataire au bien
+   - Envoi automatique du contrat par email
+   - CrÃ©ation du dossier contractuel
+
+**Ã‰tat des Lieux:**
+- **CrÃ©ation Ã©tat des lieux d'entrÃ©e:**
+  - Formulaire dÃ©taillÃ© par piÃ¨ce
+  - Upload de photos multiples
+  - RelevÃ©s de compteurs
+  - GÃ©nÃ©ration PDF automatique
+  - Signature Ã©lectronique ou scan de signature
+
+- **CrÃ©ation Ã©tat des lieux de sortie:**
+  - Reprise du format d'entrÃ©e pour comparaison
+  - Calcul automatique des dÃ©gradations
+  - Montant Ã  dÃ©duire de la caution
+  - GÃ©nÃ©ration PDF automatique
+
+**Gestion des Contrats:**
+- **Liste des contrats avec filtres:**
+  - Tous les contrats
+  - Contrats actifs
+  - Contrats expirÃ©s
+  - Contrats rÃ©siliÃ©s
+  - Par gestionnaire
+  - Par type de bien
+  - Par pÃ©riode
+
+- **Recherche:**
+  - Par numÃ©ro de contrat
+  - Par nom de locataire
+  - Par bien
+  - Par date
+
+- **Actions disponibles:**
+  - Consulter le contrat complet
+  - Modifier le contrat (si non signÃ©)
+  - CrÃ©er un avenant (si modification nÃ©cessaire)
+  - Renouveler le contrat
+  - RÃ©silier le contrat
+  - TÃ©lÃ©charger le PDF
+  - Envoyer par email
+  - Imprimer
+
+**Renouvellement de Contrat:**
+1. Notification automatique 60 jours avant expiration
+2. PossibilitÃ© de rÃ©vision du loyer
+3. GÃ©nÃ©ration d'un nouveau contrat ou avenant
+4. Nouveau numÃ©ro de contrat (si crÃ©ation)
+5. Conservation de l'historique
+
+**RÃ©siliation de Contrat:**
+1. SÃ©lection du motif de rÃ©siliation
+2. Calcul automatique de la date effective (selon prÃ©avis)
+3. VÃ©rification des paiements en attente
+4. CrÃ©ation de l'Ã©tat des lieux de sortie
+5. Calcul de la restitution de caution
+6. GÃ©nÃ©ration du document de rÃ©siliation
+7. Changement automatique du statut du bien (LOUÃ‰ â†’ DISPONIBLE)
+8. DÃ©sassociation du locataire
+9. Archivage du contrat
+
+**Tableau de Bord Contrats:**
+- Nombre de contrats actifs
+- Contrats Ã  renouveler (30, 60, 90 jours)
+- Contrats expirÃ©s non renouvelÃ©s
+- Valeur totale des loyers mensuels
+- Cautions dÃ©tenues (montant total)
+- DurÃ©e moyenne des baux
+- Taux de renouvellement
+
+**Alertes Automatiques:**
+- 90 jours avant expiration: notification de renouvellement
+- 60 jours avant expiration: alerte renouvellement
+- 30 jours avant expiration: alerte urgente
+- 15 jours avant expiration: alerte critique
+- Jour d'expiration: contrat expirÃ© automatiquement
+
+**ModÃ¨les de Contrats:**
+- ModÃ¨le pour habitation
+- ModÃ¨le pour commerce
+- ModÃ¨le pour terrain
+- ModÃ¨les personnalisables (textes, clauses)
+- Variables automatiques (nom, dates, montants)
+
+**GÃ©nÃ©ration de Documents:**
+- **Contrat de location (PDF):**
+  - Mise en page professionnelle
+  - Logo et en-tÃªte personnalisables
+  - Tous les dÃ©tails du contrat
+  - Espace pour signatures
+  
+- **Ã‰tat des lieux (PDF):**
+  - Format standardisÃ©
+  - Photos intÃ©grÃ©es
+  - Tableaux dÃ©taillÃ©s par piÃ¨ce
+  - Espace pour signatures
+
+- **Avenant au contrat (PDF):**
+  - RÃ©fÃ©rence au contrat initial
+  - Modifications apportÃ©es
+  - Signatures
+
+- **Document de rÃ©siliation (PDF):**
+  - Motif et date
+  - Calculs financiers
+  - Restitution de caution
+
+**Export et Rapports:**
+- Liste de tous les contrats (Excel/CSV)
+- Contrats par pÃ©riode
+- Rapport de fin de gestion
+- Historique complet par bien
+- Historique complet par locataire
+
+### 3.5 Gestion des Paiements
+
+#### 3.5.1 Structure des Paiements
+
+**Ã‰chÃ©ancier Automatique:**
+- GÃ©nÃ©ration automatique lors de la crÃ©ation du contrat
+- CrÃ©ation de toutes les Ã©chÃ©ances mensuelles pour la durÃ©e du bail
+- Chaque Ã©chÃ©ance contient:
+  - NumÃ©ro d'Ã©chÃ©ance (sÃ©quentiel)
+  - Mois concernÃ© (ex: Janvier 2025)
+  - Date d'Ã©chÃ©ance (selon jour dÃ©fini dans contrat)
+  - Montant du loyer
+  - Montant des charges
+  - Montant total Ã  payer
+  - Statut (Ã  venir, en retard, payÃ© partiellement, payÃ©)
+
+**Informations sur le Paiement:**
+- NumÃ©ro de reÃ§u/quittance (auto-gÃ©nÃ©rÃ©, format: QUIT-2025-0001)
+- RÃ©fÃ©rence au contrat
+- RÃ©fÃ©rence au locataire
+- RÃ©fÃ©rence au bien
+- Mois/PÃ©riode concernÃ©(e)
+- Date d'Ã©chÃ©ance
+- Date de paiement effectif
+- Montant dÃ» (loyer + charges)
+- Montant payÃ©
+- MÃ©thode de paiement (espÃ¨ces, virement bancaire, mobile money, chÃ¨que)
+- RÃ©fÃ©rence de transaction (pour virement/mobile money)
+- PÃ©nalitÃ©s de retard (calculÃ©es automatiquement)
+- Montant total encaissÃ© (paiement + pÃ©nalitÃ©s)
+- ReÃ§u par (admin/gestionnaire)
+- Observations/Notes
+- Statut du paiement (en attente, payÃ©, payÃ© partiellement, en retard)
+
+**Calcul Automatique des PÃ©nalitÃ©s:**
+- DÃ©clenchement automatique aprÃ¨s la date d'Ã©chÃ©ance
+- Calcul selon formule dÃ©finie dans contrat:
+  - Pourcentage par jour de retard (ex: 1% par jour)
+  - Ou montant fixe par jour (ex: 1000 FBU/jour)
+  - Ou montant forfaitaire aprÃ¨s X jours
+- Ajout automatique au montant dÃ»
+- Historique des pÃ©nalitÃ©s appliquÃ©es
+
+**Paiements Partiels:**
+- PossibilitÃ© d'enregistrer plusieurs paiements pour une mÃªme Ã©chÃ©ance
+- Suivi du solde restant
+- Historique de tous les paiements partiels
+- Alerte tant que le solde n'est pas Ã  zÃ©ro
+
+**Paiements AnticipÃ©s:**
+- PossibilitÃ© de payer plusieurs mois d'avance
+- Attribution automatique aux prochaines Ã©chÃ©ances
+- Marquage des Ã©chÃ©ances comme "payÃ©es d'avance"
+- Suivi du crÃ©dit du locataire
+
+#### 3.5.2 FonctionnalitÃ©s du Module Paiements
+
+**Enregistrement d'un Paiement:**
+1. SÃ©lection du locataire
+2. Affichage automatique des Ã©chÃ©ances impayÃ©es
+3. SÃ©lection de l'Ã©chÃ©ance Ã  rÃ©gler
+4. Saisie du montant payÃ©
+5. SÃ©lection de la mÃ©thode de paiement
+6. RÃ©fÃ©rence de transaction (si applicable)
+7. Calcul automatique des pÃ©nalitÃ©s si retard
+8. Validation et enregistrement
+9. **GÃ©nÃ©ration automatique immÃ©diate de la quittance (PDF)**
+10. Option d'envoi par email/WhatsApp
+
+**Quittances et ReÃ§us (GÃ©nÃ©ration PDF Automatique):**
+
+AprÃ¨s chaque paiement, le systÃ¨me gÃ©nÃ¨re automatiquement:
+
+**Quittance de Loyer (PDF):**
+- En-tÃªte avec logo et informations du bailleur
+- NumÃ©ro de quittance unique
+- Date d'Ã©mission
+- Informations du locataire (nom, adresse)
+- Informations du bien louÃ© (adresse, type)
+- Mois/PÃ©riode concernÃ©(e)
+- DÃ©tail des montants:
+  - Loyer: XXX FBU
+  - Charges: XXX FBU
+  - PÃ©nalitÃ©s de retard: XXX FBU (si applicable)
+  - Total payÃ©: XXX FBU
+- MÃ©thode de paiement
+- Solde restant (si paiement partiel)
+- Mention "Pour acquit" avec date
+- Signature du bailleur/gestionnaire (image ou Ã©lectronique)
+- Cachet (image)
+- Mentions lÃ©gales
+- Pied de page avec coordonnÃ©es
+
+**Options de la Quittance:**
+- TÃ©lÃ©chargement immÃ©diat (PDF)
+- Envoi automatique par email
+- Envoi par WhatsApp (lien de tÃ©lÃ©chargement)
+- Impression directe
+- RÃ©impression ultÃ©rieure possible
+- Personnalisation du modÃ¨le (logo, couleurs, mentions)
+
+**Tableau de Bord Paiements:**
+- **Vue d'ensemble:**
+  - Total encaissÃ© ce mois
+  - Total attendu ce mois
+  - Taux de recouvrement (%)
+  - Paiements en retard (nombre et montant)
+  - Paiements Ã  venir dans 7 jours
+  - PÃ©nalitÃ©s du mois (montant total)
+
+- **Graphiques:**
+  - Ã‰volution des encaissements (12 derniers mois)
+  - Taux de ponctualitÃ© par locataire
+  - RÃ©partition des mÃ©thodes de paiement
+  - Biens les plus rentables
+
+**Liste des Paiements:**
+- Filtres avancÃ©s:
+  - Par pÃ©riode (jour, semaine, mois, annÃ©e, personnalisÃ©e)
+  - Par locataire
+  - Par bien
+  - Par gestionnaire
+  - Par statut (payÃ©, en retard, partiel)
+  - Par mÃ©thode de paiement
+- Recherche rapide (numÃ©ro de quittance, nom locataire)
+- Tri (date, montant, locataire)
+- Vue dÃ©taillÃ©e de chaque paiement
+- Export Excel/CSV
+
+**Gestion des ImpayÃ©s:**
+- Liste automatique des paiements en retard
+- Nombre de jours de retard
+- Montant des pÃ©nalitÃ©s accumulÃ©es
+- Actions rapides:
+  - Envoyer relance par email
+  - Envoyer relance par SMS
+  - Marquer comme "en cours de rÃ¨glement"
+  - CrÃ©er une note de suivi
+  - Programmer un rappel
+
+**Relances Automatiques:**
+- **J-3:** Rappel avant Ã©chÃ©ance (email/SMS)
+- **J+1:** 1er jour de retard (email/SMS)
+- **J+7:** 1 semaine de retard (email/SMS + note dans systÃ¨me)
+- **J+15:** 2 semaines de retard (alerte importante)
+- **J+30:** 1 mois de retard (alerte critique)
+- Messages personnalisables pour chaque niveau
+
+**Historique des Paiements:**
+- Vue complÃ¨te par locataire
+- Vue complÃ¨te par bien
+- Statistiques de ponctualitÃ©
+- Moyenne des retards
+- Total payÃ© depuis le dÃ©but
+- Graphique de rÃ©gularitÃ©
+
+**Rapprochement Bancaire:**
+- Import des relevÃ©s bancaires (CSV)
+- Rapprochement automatique par rÃ©fÃ©rence
+- Validation manuelle des transactions
+- Suivi des paiements non identifiÃ©s
+
+**Export et Rapports:**
+- Livre de caisse (journal des encaissements)
+- Ã‰tat des loyers (Excel)
+- Rapport mensuel par bien
+- Rapport annuel par locataire
+- Certificat de loyers payÃ©s (pour locataire)
+- DÃ©claration fiscale (donnÃ©es formatÃ©es)
+
+### 3.6 Gestion des Charges et DÃ©penses
+
+#### 3.6.1 Types de Charges
+
+**Charges RÃ©cupÃ©rables (Refacturables au Locataire):**
+- Eau (consommation)
+- Ã‰lectricitÃ© commune (si applicable)
+- Entretien des parties communes
+- Taxe d'enlÃ¨vement d'ordures
+- Frais de gardiennage/sÃ©curitÃ©
+- Entretien des espaces verts
+- Entretien de l'ascenseur
+- Maintenance des Ã©quipements communs
+- Autres charges spÃ©cifiques au contrat
+
+**Charges Non RÃ©cupÃ©rables (Ã€ charge du PropriÃ©taire):**
+- Taxe fonciÃ¨re
+- Assurance propriÃ©taire
+- Gros travaux et rÃ©parations
+- RÃ©novations
+- Frais de gestion
+- Honoraires professionnels
+- Frais bancaires
+- Amortissements
+- Autres frais de propriÃ©tÃ©
+
+#### 3.6.2 Informations sur les DÃ©penses
+
+**Identification:**
+- NumÃ©ro de dÃ©pense (auto-gÃ©nÃ©rÃ©)
+- Date de la dÃ©pense
+- Bien concernÃ© (sÃ©lection)
+- CatÃ©gorie de dÃ©pense (liste prÃ©dÃ©finie + personnalisable)
+- Type (rÃ©cupÃ©rable/non rÃ©cupÃ©rable)
+
+**DÃ©tails Financiers:**
+- Montant HT (si applicable)
+- TVA (si applicable)
+- Montant TTC
+- Devise (FBU par dÃ©faut)
+- Mode de paiement (espÃ¨ces, chÃ¨que, virement, carte)
+- RÃ©fÃ©rence de paiement
+
+**Fournisseur/Prestataire:**
+- Nom du fournisseur
+- TÃ©lÃ©phone
+- Email
+- Adresse
+- Notes
+
+**Description:**
+- Description dÃ©taillÃ©e de la dÃ©pense
+- Motif/Justification
+- Urgence (normale, urgente)
+- Observations
+
+**Documents:**
+- Facture (PDF, image)
+- Bon de commande
+- Devis
+- Photos (avant/aprÃ¨s travaux)
+- Autres justificatifs
+
+**Gestion:**
+- Statut (en attente, validÃ©e, payÃ©e, refusÃ©e)
+- ValidÃ©e par (admin)
+- Date de validation
+- PayÃ©e le (date)
+- Notes internes
+- EnregistrÃ© par (gestionnaire/admin)
+
+#### 3.6.3 FonctionnalitÃ©s du Module Charges
+
+**Enregistrement de DÃ©pense:**
+1. Formulaire de saisie rapide
+2. SÃ©lection du bien concernÃ©
+3. CatÃ©gorisation automatique
+4. Upload de la facture/justificatif
+5. Calculs automatiques (TVA, total)
+6. Validation et enregistrement
+7. Notification selon montant (si > seuil)
+
+**Gestion des Fournisseurs:**
+- Base de donnÃ©es des fournisseurs
+- Ajout/Modification de fournisseurs
+- Historique des interventions par fournisseur
+- Ã‰valuation des fournisseurs (notes, commentaires)
+- CoordonnÃ©es complÃ¨tes
+- Recherche rapide
+
+**CatÃ©gories de DÃ©penses:**
+- Liste prÃ©dÃ©finie modifiable
+- Ajout de nouvelles catÃ©gories
+- Attribution automatique rÃ©cupÃ©rable/non rÃ©cupÃ©rable
+- Statistiques par catÃ©gorie
+
+**Validation des DÃ©penses:**
+- Workflow de validation (si gestionnaire)
+- Super Admin valide les dÃ©penses importantes
+- Historique des validations
+- Refus avec motif
+
+**RÃ©partition des Charges:**
+- Calcul automatique des charges rÃ©cupÃ©rables par bien
+- RÃ©partition proportionnelle (si plusieurs locataires)
+- IntÃ©gration dans les Ã©chÃ©ances de paiement
+- Ajustement possible
+
+**Tableau de Bord Charges:**
+- Total des dÃ©penses du mois
+- DÃ©penses par catÃ©gorie (graphique)
+- DÃ©penses par bien
+- Charges rÃ©cupÃ©rables vs non rÃ©cupÃ©rables
+- Top 5 des dÃ©penses
+- Comparaison mensuelle/annuelle
+- PrÃ©visions de dÃ©penses
+
+**Rapports de DÃ©penses:**
+- Journal des dÃ©penses (toutes)
+- DÃ©penses par pÃ©riode
+- DÃ©penses par bien
+- DÃ©penses par catÃ©gorie
+- DÃ©penses par fournisseur
+- Ã‰tat de rÃ©cupÃ©ration des charges
+- Export Excel/CSV/PDF
+
+**Budget et PrÃ©visions:**
+- DÃ©finition de budgets mensuels par catÃ©gorie
+- Alertes si dÃ©passement
+- Suivi des Ã©carts budget/rÃ©alisÃ©
+- Projections annuelles
+
+### 3.7 Gestion de la Maintenance et Interventions
+
+#### 3.7.1 Tickets d'Intervention
+
+**CrÃ©ation du Ticket:**
+- NumÃ©ro de ticket (auto-gÃ©nÃ©rÃ©: MAINT-2025-0001)
+- Date de crÃ©ation
+- CrÃ©Ã© par (admin/gestionnaire)
+- Bien concernÃ©
+- Locataire (si habitÃ©)
+- CatÃ©gorie:
+  - Plomberie
+  - Ã‰lectricitÃ©
+  - Menuiserie
+  - MaÃ§onnerie
+  - Peinture
+  - Toiture
+  - Climatisation
+  - Serrurerie
+  - Vitrerie
+  - Nettoyage
+  - Jardinage
+  - Autres
+- PrioritÃ©:
+  - ðŸ”´ Urgente (risque sÃ©curitÃ©, habitabilitÃ©)
+  - ðŸŸ  Haute (problÃ¨me important)
+  - ðŸŸ¡ Moyenne (peut attendre quelques jours)
+  - ðŸŸ¢ Basse (entretien prÃ©ventif)
+
+**Description du ProblÃ¨me:**
+- Titre court du problÃ¨me
+- Description dÃ©taillÃ©e
+- Localisation prÃ©cise (piÃ¨ce, Ã©quipement)
+- Date de constatation
+- SymptÃ´mes observÃ©s
+- Photos du problÃ¨me (avant intervention)
+
+**Affectation:**
+- Prestataire assignÃ© (sÃ©lection depuis base)
+- Date d'affectation
+- Date prÃ©vue d'intervention
+- Heure prÃ©vue
+- DurÃ©e estimÃ©e
+- CoÃ»t estimÃ©
+
+**Suivi de l'Intervention:**
+- Statut:
+  - âšª Nouveau (vient d'Ãªtre crÃ©Ã©)
+  - ðŸ”µ En attente (assignÃ©, pas encore dÃ©marrÃ©)
+  - ðŸŸ¡ En cours (intervention en cours)
+  - ðŸŸ¢ TerminÃ© (travail fini)
+  - âš« AnnulÃ© (plus nÃ©cessaire)
+- Date de dÃ©but rÃ©elle
+- Date de fin rÃ©elle
+- Travaux effectuÃ©s (description)
+- PiÃ¨ces/MatÃ©riel utilisÃ©s
+- Photos aprÃ¨s intervention
+- CoÃ»t rÃ©el de l'intervention
+- Facture du prestataire (upload)
+
+**Validation:**
+- Intervention validÃ©e par (admin/gestionnaire)
+- Date de validation
+- Notes sur la qualitÃ©
+- Ã‰valuation du prestataire (1-5 Ã©toiles)
+- RÃ©clamations Ã©ventuelles
+
+#### 3.7.2 FonctionnalitÃ©s du Module Maintenance
+
+**Gestion des Tickets:**
+- Liste de tous les tickets
+- Filtres:
+  - Par statut
+  - Par prioritÃ©
+  - Par bien
+  - Par prestataire
+  - Par catÃ©gorie
+  - Par pÃ©riode
+- Vue en tableau (Kanban) par statut
+- Vue en calendrier (interventions planifiÃ©es)
+- Recherche rapide
+
+**Tableau de Bord Maintenance:**
+- Tickets ouverts
+- Tickets en attente d'affectation
+- Interventions du jour
+- Interventions de la semaine
+- Tickets urgents
+- CoÃ»ts de maintenance du mois
+- Temps moyen de rÃ©solution
+- Statistiques par catÃ©gorie
+
+**Gestion des Prestataires:**
+- Base de donnÃ©es des prestataires
+- Par spÃ©cialitÃ©
+- CoordonnÃ©es complÃ¨tes
+- DisponibilitÃ©
+- Tarifs moyens
+- Historique des interventions
+- Ã‰valuations et notes moyennes
+- Documents (assurance, certifications)
+
+**Planning des Interventions:**
+- Calendrier mensuel
+- Vue hebdomadaire
+- Vue journaliÃ¨re
+- Attribution automatique selon disponibilitÃ©
+- Conflits d'horaires signalÃ©s
+- Envoi automatique de rappels
+
+**Maintenance PrÃ©ventive:**
+- CrÃ©ation de plans de maintenance
+- Interventions rÃ©currentes (mensuel, trimestriel, annuel)
+- Rappels automatiques
+- Checklist par type d'intervention
+- Historique complet par Ã©quipement
+
+**Rapports Maintenance:**
+- Registre des interventions
+- CoÃ»ts de maintenance par bien
+- Performance des prestataires
+- Temps d'intervention moyen
+- ProblÃ¨mes rÃ©currents
+- Export Excel/PDF
+
+### 3.8 Communication (Externe)
+
+**Canaux de Communication:**
+
+L'application n'intÃ¨gre pas de systÃ¨me de messagerie interne. La communication se fait via les canaux externes standards:
+
+**1. Email:**
+- Envoi automatique depuis l'application (via Nodemailer)
+- Templates personnalisables:
+  - Nouveau contrat
+  - Quittance de loyer
+  - Rappel d'Ã©chÃ©ance (J-3)
+  - Relance de paiement (J+1, J+7, J+15, J+30)
+  - Fin de contrat approchant
+  - Documents divers
+- Historique des emails envoyÃ©s
+- Statut de livraison
+- PiÃ¨ces jointes (PDF)
+
+**2. SMS:**
+- IntÃ©gration avec opÃ©rateurs locaux burundais
+- Messages courts pour:
+  - Rappels d'Ã©chÃ©ance
+  - Confirmation de paiement
+  - Alertes urgentes
+  - Rendez-vous d'intervention
+- Templates prÃ©dÃ©finis
+- Historique des SMS
+- CoÃ»t par SMS visible
+
+**3. WhatsApp:**
+- Liens directs vers WhatsApp depuis les fiches
+- Click-to-chat depuis profil locataire
+- Partage de documents (quittances, contrats) via WhatsApp Web
+- Pas de bot intÃ©grÃ© (communication manuelle)
+
+**FonctionnalitÃ©s:**
+- Envoi groupÃ© d'emails (tous les locataires)
+- Envoi sÃ©lectif (par bien, par statut)
+- Historique complet de toutes les communications
+- Templates modifiables
+- Variables dynamiques (nom, montant, date, etc.)
+
+### 3.9 Rapports et Statistiques
+
+#### 3.9.1 Rapports Financiers
+
+**Ã‰tat des Loyers:**
+- PÃ©riode sÃ©lectionnable
+- Liste de tous les biens
+- Pour chaque bien:
+  - Loyer mensuel
+  - Charges
+  - Total attendu
+  - Total encaissÃ©
+  - Total en retard
+  - Taux de recouvrement
+- Totaux gÃ©nÃ©raux
+- Export Excel/PDF
+
+**Revenus par PÃ©riode:**
+- SÃ©lection pÃ©riode (mois, trimestre, annÃ©e, personnalisÃ©e)
+- Revenus par bien
+- Revenus par type de bien
+- Ã‰volution graphique
+- Comparaison avec pÃ©riodes prÃ©cÃ©dentes
+- PrÃ©visions pour mois suivants
+
+**DÃ©penses par PÃ©riode:**
+- SÃ©lection pÃ©riode
+- DÃ©penses par bien
+- DÃ©penses par catÃ©gorie
+- Charges rÃ©cupÃ©rables vs non rÃ©cupÃ©rables
+- Ã‰volution graphique
+- Top 10 des dÃ©penses
+
+**Bilan par Bien:**
+- SÃ©lection du bien
+- PÃ©riode analysÃ©e
+- Revenus (loyers + charges)
+- DÃ©penses (toutes catÃ©gories)
+- RÃ©sultat net (revenus - dÃ©penses)
+- Taux de rentabilitÃ© (%)
+- Graphiques d'Ã©volution
+- Comparaison avec autres biens
+
+**Compte de RÃ©sultat:**
+- PÃ©riode (mensuel, annuel)
+- Produits:
+  - Loyers perÃ§us
+  - Charges rÃ©cupÃ©rÃ©es
+  - PÃ©nalitÃ©s de retard
+  - Total produits
+- Charges:
+  - Charges rÃ©cupÃ©rables payÃ©es
+  - Charges non rÃ©cupÃ©rables
+  - ImpÃ´ts et taxes
+  - Assurances
+  - Maintenance
+  - Autres frais
+  - Total charges
+- RÃ©sultat d'exploitation
+- Export comptable
+
+**Flux de TrÃ©sorerie:**
+- Vue mensuelle sur 12 mois
+- Encaissements du mois
+- DÃ©caissements du mois
+- Solde du mois
+- Solde cumulÃ©
+- PrÃ©visions de trÃ©sorerie
+- Graphique d'Ã©volution
+
+**Situation Fiscale:**
+- Revenus fonciers annuels
+- Charges dÃ©ductibles
+- Revenu net imposable
+- DonnÃ©es formatÃ©es pour dÃ©claration fiscale
+- Historique annuel
+
+#### 3.9.2 Rapports OpÃ©rationnels
+
+**Taux d'Occupation:**
+- Par pÃ©riode
+- Nombre de biens totaux
+- Biens louÃ©s
+- Biens disponibles
+- Biens en maintenance
+- Taux d'occupation (%)
+- Ã‰volution graphique
+- Par type de bien
+
+**Turnover des Locataires:**
+- Nouveaux locataires (pÃ©riode)
+- DÃ©parts de locataires (pÃ©riode)
+- Taux de turnover (%)
+- DurÃ©e moyenne de location
+- Motifs de dÃ©part (statistiques)
+- Ã‰volution dans le temps
+
+**DÃ©lai Moyen de Paiement:**
+- Par locataire
+- Par bien
+- Global
+- Nombre de paiements Ã  temps
+- Nombre de paiements en retard
+- Retard moyen (en jours)
+- Ã‰volution mensuelle
+
+**Performance par Bien:**
+- Classement par rentabilitÃ©
+- Classement par taux d'occupation
+- Classement par ponctualitÃ© des paiements
+- CoÃ»ts de maintenance par bien
+- DurÃ©e moyenne des baux
+- Satisfaction (basÃ©e sur incidents)
+
+**Statistiques de Maintenance:**
+- Nombre d'interventions par bien
+- CoÃ»ts de maintenance par bien
+- Temps moyen de rÃ©solution
+- ProblÃ¨mes rÃ©currents
+- Performance des prestataires
+- RÃ©partition par catÃ©gorie
+
+#### 3.9.3 Tableaux de Bord
+
+**Tableau de Bord Principal (Accueil):**
+
+**Vue d'ensemble:**
+- ðŸ“Š KPIs Principaux (cartes):
+  - Nombre total de biens
+  - Taux d'occupation
+  - Revenus du mois
+  - Paiements en retard
+  
+- ðŸ“ˆ Graphiques:
+  - Ã‰volution des revenus (12 mois)
+  - RÃ©partition des biens par statut
+  - Top 5 des biens rentables
+  - Paiements du mois (payÃ©s vs en attente)
+
+- âš ï¸ Alertes et Notifications:
+  - Contrats expirant dans 30 jours
+  - Paiements en retard
+  - Interventions urgentes
+  - Documents Ã  renouveler
+
+- ðŸ“… Ã‰vÃ©nements Ã  Venir:
+  - Paiements attendus dans 7 jours
+  - Interventions planifiÃ©es
+  - Fins de contrat
+  - Rendez-vous
+
+- ðŸ”” ActivitÃ© RÃ©cente:
+  - Derniers paiements enregistrÃ©s
+  - Nouveaux contrats
+  - Tickets de maintenance crÃ©Ã©s
+  - Modifications importantes
+
+**Tableau de Bord Financier:**
+- Vue consolidÃ©e des finances
+- Ã‰volution mensuelle/annuelle
+- RÃ©partition revenus/dÃ©penses
+- Biens les plus/moins rentables
+- PrÃ©visions et projections
+- Indicateurs de performance
+
+**Tableau de Bord par Bien:**
+- SÃ©lection d'un bien spÃ©cifique
+- Toutes les informations clÃ©s du bien
+- Historique complet
+- Performance financiÃ¨re
+- Ã‰tat d'occupation
+- Maintenance et interventions
+
+**Personnalisation:**
+- Widgets dÃ©plaÃ§ables (drag & drop)
+- Choix des graphiques affichÃ©s
+- PÃ©riode d'analyse personnalisable
+- Sauvegardes des configurations
+
+#### 3.9.4 Export et Impression
+
+**Formats d'Export:**
+- PDF (mise en page professionnelle)
+- Excel (.xlsx) - avec formules
+- CSV (donnÃ©es brutes)
+- JSON (donnÃ©es structurÃ©es)
+
+**Documents Exportables:**
+- Tous les rapports financiers
+- Tous les rapports opÃ©rationnels
+- Listes (biens, locataires, contrats)
+- Historiques complets
+- Tableaux de bord
+
+**Options d'Export:**
+- Export immÃ©diat
+- Export planifiÃ© (envoi automatique email)
+- Export rÃ©current (mensuel, trimestriel)
+- Templates personnalisables
+- Logo et en-tÃªte personnalisÃ©s
+
+### 3.10 Gestion Documentaire
+
+#### 3.10.1 Organisation des Documents
+
+**Structure:**
+```
+Documents/
+â”œâ”€â”€ Biens/
+â”‚   â”œâ”€â”€ [ID_Bien]/
+â”‚   â”‚   â”œâ”€â”€ PropriÃ©tÃ©/
+â”‚   â”‚   â”‚   â”œâ”€â”€ Titre de propriÃ©tÃ©
+â”‚   â”‚   â”‚   â”œâ”€â”€ Plans
+â”‚   â”‚   â”‚   â”œâ”€â”€ Certificats
+â”‚   â”‚   â”œâ”€â”€ Photos/
+â”‚   â”‚   â”œâ”€â”€ Factures/
+â”‚   â”‚   â”œâ”€â”€ Contrats/
+â”‚   â”‚   â””â”€â”€ Autres/
+â”œâ”€â”€ Locataires/
+â”‚   â”œâ”€â”€ [ID_Locataire]/
+â”‚   â”‚   â”œâ”€â”€ IdentitÃ©/
+â”‚   â”‚   â”œâ”€â”€ Contrats/
+â”‚   â”‚   â”œâ”€â”€ Quittances/
+â”‚   â”‚   â””â”€â”€ Autres/
+â”œâ”€â”€ Paiements/
+â”‚   â”œâ”€â”€ Quittances/
+â”‚   â”‚   â”œâ”€â”€ [AnnÃ©e]/
+â”‚   â”‚   â”‚   â”œâ”€â”€ [Mois]/
+â”œâ”€â”€ Maintenance/
+â”‚   â”œâ”€â”€ Factures/
+â”‚   â”œâ”€â”€ Photos/
+â”‚   â””â”€â”€ Rapports/
+â””â”€â”€ Administratif/
+    â”œâ”€â”€ Assurances/
+    â”œâ”€â”€ Taxes/
+    â””â”€â”€ Divers/
+```
+
+**Types de Documents GÃ©rÃ©s:**
+- PDF
+- Images (JPEG, PNG, WebP)
+- Documents Office (Word, Excel) - convertis en PDF
+- Documents scannÃ©s
+
+#### 3.10.2 FonctionnalitÃ©s Documentaires
+
+**Upload de Documents:**
+- Drag & drop multiple
+- SÃ©lection de fichiers
+- Limite de taille: 10MB par fichier
+- Compression automatique des images
+- Conversion auto en PDF (si nÃ©cessaire)
+- MÃ©tadonnÃ©es automatiques (date, auteur, type)
+
+**Gestion des Documents:**
+- Arborescence claire et navigable
+- Recherche plein texte (nom, tags)
+- Filtres (type, date, catÃ©gorie)
+- PrÃ©visualisation intÃ©grÃ©e
+- TÃ©lÃ©chargement individuel ou groupÃ©
+- Renommage
+- DÃ©placement
+- Suppression (avec confirmation)
+
+**Versioning:**
+- Historique des versions
+- Date de chaque version
+- TÃ©lÃ©chargÃ© par
+- PossibilitÃ© de restaurer version antÃ©rieure
+
+**Partage:**
+- GÃ©nÃ©ration de liens de partage sÃ©curisÃ©s
+- Liens avec expiration (24h, 7 jours, 30 jours)
+- Liens avec mot de passe
+- Envoi direct par email
+- TÃ©lÃ©chargement traÃ§able (qui, quand)
+
+**Organisation:**
+- Tags personnalisÃ©s
+- CatÃ©gories
+- Couleurs
+- Favoris
+- Notes sur documents
+
+**Stockage:**
+- Stockage cloud (Cloudinary gratuit 25GB)
+- Organisation automatique par dossiers
+- Nettoyage automatique (fichiers temporaires)
+- Sauvegarde automatique
+
+**SÃ©curitÃ©:**
+- Chiffrement des fichiers sensibles
+- ContrÃ´le d'accÃ¨s par rÃ´le
+- Logs d'accÃ¨s aux documents
+- Suppression dÃ©finitive sÃ©curisÃ©e
+
+---
+
+## 4. EXIGENCES NON FONCTIONNELLES
+
+### 4.1 Performance
+
+**Temps de RÃ©ponse:**
+- Pages: < 2 secondes (95% des requÃªtes)
+- API: < 500ms (90% des requÃªtes)
+- Recherche: < 1 seconde
+- GÃ©nÃ©ration PDF: < 3 secondes
+
+**Optimisations:**
+- Lazy loading des images
+- Pagination (25-50 items par page)
+- Mise en cache (Redis gratuit sur Upstash)
+- Compression Gzip/Brotli
+- Minification CSS/JS
+- CDN pour assets statiques
+- Index optimisÃ©s sur PostgreSQL
+- RequÃªtes SQL optimisÃ©es avec EXPLAIN
+
+**CapacitÃ©:**
+- Support jusqu'Ã  500 biens
+- 1000 locataires
+- 5000 paiements/mois
+- 100 utilisateurs simultanÃ©s
+- 50GB de stockage documents
+
+### 4.2 SÃ©curitÃ©
+
+#### 4.2.1 Authentification et Autorisation
+
+**Mots de Passe:**
+- Longueur minimale: 8 caractÃ¨res
+- Obligation: majuscule + minuscule + chiffre
+- Hash bcrypt (cost factor 10)
+- Pas de rÃ©utilisation des 5 derniers mots de passe
+- Expiration recommandÃ©e: 90 jours
+
+**Sessions:**
+- JWT avec expiration 24h
+- Refresh token: 7 jours
+- RÃ©vocation possible des tokens
+- Stockage sÃ©curisÃ© (httpOnly cookies)
+
+**ContrÃ´le d'AccÃ¨s (RBAC):**
+- Super Admin: Tous les droits
+- Gestionnaire: Droits limitÃ©s aux biens assignÃ©s
+- VÃ©rification Ã  chaque requÃªte API
+- Logs de toutes les actions sensibles
+
+#### 4.2.2 Protection des DonnÃ©es
+
+**Chiffrement:**
+- HTTPS/TLS 1.3 obligatoire
+- Certificat SSL gratuit (Let's Encrypt)
+- DonnÃ©es sensibles chiffrÃ©es (crypto-js):
+  - NumÃ©ros CNI
+  - CoordonnÃ©es bancaires
+  - Documents d'identitÃ©
+- Chiffrement AES-256-GCM
+
+**Protection contre Attaques:**
+- **SQL Injection:** RequÃªtes prÃ©parÃ©es, validation stricte
+- **XSS:** Ã‰chappement HTML, Content Security Policy
+- **CSRF:** Tokens CSRF, SameSite cookies
+- **Rate Limiting:** 100 requÃªtes/15min par IP
+- **Brute Force:** Blocage aprÃ¨s 5 tentatives (30min)
+
+**Validation des EntrÃ©es:**
+- Validation cÃ´tÃ© client (React Hook Form)
+- Validation cÃ´tÃ© serveur (Joi/Yup)
+- Sanitisation des donnÃ©es (DOMPurify)
+- Whitelist des types de fichiers
+- Scan antivirus des uploads (ClamAV)
+
+**ConformitÃ© RGPD/Protection des DonnÃ©es:**
+- Consentement explicite pour collecte de donnÃ©es
+- Droit Ã  l'oubli (suppression compte)
+- PortabilitÃ© des donnÃ©es (export complet)
+- Politique de confidentialitÃ©
+- DurÃ©e de conservation limitÃ©e
+- Pseudonymisation des donnÃ©es archivÃ©es
+
+#### 4.2.3 Audit et TraÃ§abilitÃ©
+
+**Logs d'Audit:**
+- Toutes les actions CRUD (Create, Read, Update, Delete)
+- Connexions et dÃ©connexions
+- Ã‰checs d'authentification
+- Modifications sensibles (contrats, paiements)
+- AccÃ¨s aux documents confidentiels
+- Exports de donnÃ©es
+
+**Informations LoggÃ©es:**
+- Utilisateur (ID, nom, rÃ´le)
+- Date et heure (timestamp prÃ©cis)
+- Adresse IP
+- Action effectuÃ©e
+- EntitÃ© concernÃ©e (type, ID)
+- Anciennes valeurs (avant modification)
+- Nouvelles valeurs (aprÃ¨s modification)
+- RÃ©sultat (succÃ¨s/Ã©chec)
+
+**Conservation:**
+- Logs conservÃ©s 12 mois minimum
+- Stockage sÃ©curisÃ© et chiffrÃ©
+- Accessible uniquement au Super Admin
+- Export possible pour analyses
+
+**Monitoring SÃ©curitÃ©:**
+- DÃ©tection d'activitÃ©s suspectes:
+  - Connexions depuis nouveaux appareils
+  - Multiples tentatives Ã©chouÃ©es
+  - Modifications massives
+  - AccÃ¨s Ã  horaires inhabituels
+- Alertes automatiques email
+- Tableau de bord sÃ©curitÃ©
+
+### 4.3 DisponibilitÃ© et FiabilitÃ©
+
+**DisponibilitÃ© Cible:** 99% (environ 7h de downtime/mois max)
+
+**Sauvegarde Automatique:**
+- **Base de donnÃ©es:**
+  - Sauvegarde complÃ¨te quotidienne (2h du matin)
+  - Sauvegarde incrÃ©mentale toutes les 6h
+  - RÃ©tention: 30 jours
+  - Stockage distant (diffÃ©rent du serveur principal)
+  - Test de restauration mensuel
+
+- **Fichiers/Documents:**
+  - Synchronisation continue (Cloudinary)
+  - Versioning automatique
+  - Redondance gÃ©ographique
+  - RÃ©tention: 60 jours
+
+**Plan de Reprise d'ActivitÃ©:**
+- ProcÃ©dure documentÃ©e de restauration
+- RTO (Recovery Time Objective): 4 heures
+- RPO (Recovery Point Objective): 6 heures (perte max de donnÃ©es)
+- Contacts d'urgence
+- Scripts de restauration automatisÃ©s
+
+**Monitoring:**
+- Uptime monitoring (UptimeRobot gratuit)
+- Alertes si serveur down (email/SMS)
+- Monitoring des performances (temps de rÃ©ponse)
+- Monitoring de l'espace disque
+- Logs d'erreurs centralisÃ©s
+- Dashboard de santÃ© du systÃ¨me
+
+**Gestion des Erreurs:**
+- Messages d'erreur clairs pour l'utilisateur
+- Logs dÃ©taillÃ©s pour le debugging
+- Page d'erreur personnalisÃ©e (500, 404)
+- Retry automatique pour Ã©checs temporaires
+- Mode dÃ©gradÃ© si services tiers indisponibles
+
+### 4.4 ScalabilitÃ©
+
+**Architecture Modulaire:**
+- Frontend et Backend sÃ©parÃ©s
+- API RESTful stateless
+- Services dÃ©couplÃ©s
+- Microservices potentiels (futur)
+
+**Base de DonnÃ©es:**
+- Index optimisÃ©s pour requÃªtes frÃ©quentes
+- Partitionnement des tables volumineuses:
+  - Paiements (par annÃ©e)
+  - Audit Logs (par trimestre)
+- Archivage des donnÃ©es anciennes (> 5 ans)
+- Nettoyage automatique des donnÃ©es temporaires
+
+**Ã‰volutivitÃ©:**
+- Code modulaire et bien structurÃ©
+- Documentation technique complÃ¨te
+- PossibilitÃ© d'ajout de fonctionnalitÃ©s
+- Architecture prÃªte pour load balancing
+- PossibilitÃ© de migration vers serveurs plus puissants
+
+**Limites Actuelles (Gratuit):**
+- 500 biens maximum
+- 1000 locataires maximum
+- 50GB stockage documents
+- 500 emails/jour
+- 1000 SMS/mois (selon opÃ©rateur)
+
+### 4.5 UtilisabilitÃ©
+
+#### 4.5.1 Interface Utilisateur
+
+**Design Responsive:**
+- Mobile First (320px - 768px)
+- Tablette (769px - 1024px)
+- Desktop (1025px+)
+- Menu adaptatif (hamburger sur mobile)
+- Tableaux scrollables horizontalement sur mobile
+- Touch-friendly (boutons min 44x44px)
+
+**Ergonomie:**
+- Navigation claire avec fil d'Ariane
+- Menu latÃ©ral persistant (desktop)
+- Recherche globale accessible partout
+- Actions rapides (boutons flottants)
+- Raccourcis clavier (Ctrl+K pour recherche, etc.)
+- Mode sombre optionnel
+- ThÃ¨me personnalisable (couleurs)
+
+**Feedback Utilisateur:**
+- Confirmations pour actions importantes
+- Messages de succÃ¨s (toasts verts)
+- Messages d'erreur explicites (toasts rouges)
+- Indicateurs de chargement (spinners)
+- Barres de progression (uploads, traitement)
+- Animations fluides et subtiles
+- Tooltips explicatifs
+
+**AccessibilitÃ© (WCAG 2.1 Niveau AA):**
+- Contraste minimum 4.5:1
+- Textes redimensionnables (jusqu'Ã  200%)
+- Navigation au clavier complÃ¨te
+- Attributs ARIA
+- Alt text sur toutes les images
+- Labels sur tous les champs de formulaire
+- Focus visible
+- Pas de dÃ©clenchement automatique de changement de contexte
+
+**Multilingue:**
+- ðŸ‡«ðŸ‡· FranÃ§ais (par dÃ©faut)
+- ðŸ‡§ðŸ‡® Kirundi (traduction complÃ¨te)
+- SystÃ¨me i18n (react-i18next)
+- SÃ©lection de langue dans profil
+- Dates et nombres formatÃ©s selon locale
+- Devise locale (FBU)
+
+#### 4.5.2 ExpÃ©rience Utilisateur
+
+**Onboarding:**
+- Assistant de premiÃ¨re connexion
+- Tour guidÃ© de l'interface (intro.js)
+- Tutoriels interactifs
+- VidÃ©os de dÃ©monstration (YouTube embedded)
+- Exemples de donnÃ©es prÃ©-remplis (mode dÃ©mo)
+
+**Aide Contextuelle:**
+- IcÃ´nes d'aide (?) avec tooltips
+- Documentation intÃ©grÃ©e
+- FAQ accessible depuis menu
+- Recherche dans l'aide
+- Support par email
+
+**Workflows OptimisÃ©s:**
+- Formulaires en Ã©tapes (wizard)
+- Sauvegarde automatique (brouillons)
+- Auto-complÃ©tion intelligente
+- Actions en masse (sÃ©lection multiple)
+- Raccourcis et actions rapides
+- Duplication de fiches
+- Templates prÃ©-remplis
+
+**Feedback de Performance:**
+- Indicateurs de chargement
+- Chargement progressif (skeleton screens)
+- Messages de confirmation immÃ©diats
+- Synchronisation en arriÃ¨re-plan
+- Cache intelligent
+
+### 4.6 Maintenance et Ã‰volutivitÃ©
+
+**Code Quality:**
+- **Frontend:**
+  - Composants rÃ©utilisables
+  - Hooks personnalisÃ©s
+  - PropTypes ou TypeScript
+  - ESLint + Prettier
+  - Structure de dossiers claire
+  
+- **Backend:**
+  - Architecture MVC ou Clean Architecture
+  - Services dÃ©couplÃ©s
+  - Middleware rÃ©utilisables
+  - Validation centralisÃ©e
+  - Gestion d'erreurs centralisÃ©e
+
+**Documentation:**
+- **README.md complet:**
+  - PrÃ©requis
+  - Installation
+  - Configuration
+  - Lancement
+  - Structure du projet
+  
+- **Documentation Technique:**
+  - Architecture systÃ¨me
+  - ModÃ¨le de donnÃ©es (ERD)
+  - API documentation (Swagger/Postman)
+  - Guides de dÃ©ploiement
+  - ProcÃ©dures de maintenance
+  
+- **Documentation Utilisateur:**
+  - Guide d'utilisation complet (PDF)
+  - Tutoriels vidÃ©o
+  - FAQ
+  - Guide d'administration
+  
+- **Code Comments:**
+  - JSDoc pour fonctions importantes
+  - Commentaires pour logique complexe
+  - TODO clairement identifiÃ©s
+
+**Tests:**
+- **Tests Unitaires:**
+  - Jest pour JavaScript
+  - Couverture cible: 70%
+  - Tests des fonctions critiques
+  - Tests des calculs financiers
+  
+- **Tests d'IntÃ©gration:**
+  - Tests des API endpoints
+  - Tests des workflows complets
+  - Tests de validation des donnÃ©es
+  
+- **Tests E2E (optionnel):**
+  - Playwright ou Cypress
+  - ScÃ©narios utilisateur critiques
+  - Tests de rÃ©gression
+
+**Versioning:**
+- Git avec GitFlow
+- Branches: main, develop, feature/*, hotfix/*
+- Commits conventionnels (Conventional Commits)
+- Tags pour versions (v1.0.0, v1.1.0)
+- CHANGELOG.md maintenu
+
+**CI/CD (optionnel mais recommandÃ©):**
+- GitHub Actions (gratuit)
+- Pipeline automatisÃ©:
+  - Linting
+  - Tests
+  - Build
+  - DÃ©ploiement automatique (develop â†’ staging)
+  - DÃ©ploiement manuel (main â†’ production)
+
+---
+
+## 5. MODÃˆLE DE DONNÃ‰ES (PostgreSQL)
+
+### 5.1 SchÃ©ma de Base de DonnÃ©es Complet
+
+#### Table: users
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(50) NOT NULL CHECK (role IN ('super_admin', 'gestionnaire')),
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  phone VARCHAR(20),
+  avatar_url TEXT,
+  is_active BOOLEAN DEFAULT true,
+  last_login TIMESTAMP,
+  failed_login_attempts INT DEFAULT 0,
+  locked_until TIMESTAMP,
+  password_changed_at TIMESTAMP,
+  must_change_password BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+```
+
+#### Table: properties
+```sql
+CREATE TABLE properties (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  owner_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  assigned_manager_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  assigned_at TIMESTAMP,
+  
+  -- Informations de base
+  property_reference VARCHAR(50) UNIQUE NOT NULL,
+  property_type VARCHAR(50) NOT NULL CHECK (property_type IN ('appartement', 'maison', 'commerce', 'terrain', 'studio')),
+  
+  -- Adresse
+  address TEXT NOT NULL,
+  city VARCHAR(100) NOT NULL,
+  province VARCHAR(100),
+  district VARCHAR(100),
+  avenue VARCHAR(200),
+  number VARCHAR(20),
+  postal_code VARCHAR(10),
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
+  
+  -- CaractÃ©ristiques communes
+  surface_area DECIMAL(10, 2),
+  description TEXT,
+  
+  -- CaractÃ©ristiques spÃ©cifiques (JSON pour flexibilitÃ© selon type)
+  specific_features JSONB, -- Stocke les attributs spÃ©cifiques par type
+  
+  -- Ã‰quipements
+  equipments JSONB, -- eau, Ã©lectricitÃ©, internet, etc.
+  
+  -- Informations financiÃ¨res
+  monthly_rent DECIMAL(15, 2) NOT NULL,
+  monthly_charges DECIMAL(15, 2) DEFAULT 0,
+  deposit_amount DECIMAL(15, 2),
+  registration_fees DECIMAL(15, 2) DEFAULT 0,
+  annual_property_tax DECIMAL(15, 2) DEFAULT 0,
+  annual_insurance_fees DECIMAL(15, 2) DEFAULT 0,
+  
+  -- Informations administratives
+  acquisition_date DATE,
+  listing_date DATE,
+  property_title_number VARCHAR(100),
+  cadastral_reference VARCHAR(100),
+  has_urban_certificate BOOLEAN DEFAULT false,
+  insurance_company VARCHAR(200),
+  insurance_policy_number VARCHAR(100),
+  insurance_expiry_date DATE,
+  
+  -- Ã‰tat et statut
+  property_condition VARCHAR(50) CHECK (property_condition IN ('excellent', 'bon', 'moyen', 'a_renover')),
+  status VARCHAR(50) DEFAULT 'disponible' CHECK (status IN ('disponible', 'loue', 'maintenance', 'hors_service', 'archive')),
+  last_maintenance_date DATE,
+  last_renovation_date DATE,
+  
+  -- MÃ©dias
+  main_photo_url TEXT,
+  photos JSONB, -- Array d'URLs de photos
+  
+  -- Gestion
+  internal_notes TEXT,
+  
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_by UUID REFERENCES users(id)
+);
+
+CREATE INDEX idx_properties_type ON properties(property_type);
+CREATE INDEX idx_properties_status ON properties(status);
+CREATE INDEX idx_properties_manager ON properties(assigned_manager_id);
+CREATE INDEX idx_properties_city ON properties(city);
+CREATE INDEX idx_properties_rent ON properties(monthly_rent);
+CREATE INDEX idx_properties_specific_features ON properties USING GIN (specific_features);
+```
+
+#### Table: tenants
+```sql
+CREATE TABLE tenants (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  
+  -- IdentitÃ©
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  gender VARCHAR(10) CHECK (gender IN ('M', 'F')),
+  birth_date DATE,
+  birth_place VARCHAR(200),
+  nationality VARCHAR(100),
+  marital_status VARCHAR(50) CHECK (marital_status IN ('celibataire', 'marie', 'divorce', 'veuf')),
+  dependents_count INT DEFAULT 0,
+  
+  -- Documents d'identitÃ©
+  id_type VARCHAR(50) CHECK (id_type IN ('cni', 'passeport', 'permis')),
+  id_number VARCHAR(100) UNIQUE,
+  id_issue_date DATE,
+  id_expiry_date DATE,
+  id_issue_place VARCHAR(200),
+  id_photo_url TEXT,
+  
+  -- CoordonnÃ©es
+  current_address TEXT,
+  current_city VARCHAR(100),
+  current_province VARCHAR(100),
+  phone_primary VARCHAR(20) NOT NULL,
+  phone_secondary VARCHAR(20),
+  email_primary VARCHAR(255),
+  email_secondary VARCHAR(255),
+  whatsapp VARCHAR(20),
+  
+  -- Situation professionnelle
+  employment_status VARCHAR(50) CHECK (employment_status IN ('salarie', 'independant', 'entrepreneur', 'etudiant', 'retraite', 'sans_emploi')),
+  profession VARCHAR(200),
+  employer_name VARCHAR(200),
+  employer_address TEXT,
+  employer_phone VARCHAR(20),
+  monthly_income DECIMAL(15, 2),
+  employment_duration_months INT,
+  
+  -- RÃ©fÃ©rences
+  reference1_name VARCHAR(200),
+  reference1_relationship VARCHAR(100),
+  reference1_phone VARCHAR(20),
+  reference2_name VARCHAR(200),
+  reference2_relationship VARCHAR(100),
+  reference2_phone VARCHAR(20),
+  
+  -- Personne Ã  contacter en urgence
+  emergency_contact_name VARCHAR(200),
+  emergency_contact_relationship VARCHAR(100),
+  emergency_contact_phone_primary VARCHAR(20),
+  emergency_contact_phone_secondary VARCHAR(20),
+  emergency_contact_address TEXT,
+  
+  -- Historique locatif
+  previous_landlord_name VARCHAR(200),
+  previous_landlord_phone VARCHAR(20),
+  previous_address TEXT,
+  previous_lease_duration_months INT,
+  reason_for_leaving TEXT,
+  has_recommendation BOOLEAN DEFAULT false,
+  
+  -- Bien actuellement occupÃ©
+  current_property_id UUID REFERENCES properties(id) ON DELETE SET NULL,
+  move_in_date DATE,
+  
+  -- Statut et Ã©valuation
+  status VARCHAR(50) DEFAULT 'actif' CHECK (status IN ('actif', 'ancien', 'suspendu')),
+  rating INT CHECK (rating BETWEEN 1 AND 5),
+  internal_notes TEXT,
+  
+  -- Photo
+  photo_url TEXT,
+  
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_by UUID REFERENCES users(id)
+);
+
+CREATE INDEX idx_tenants_name ON tenants(last_name, first_name);
+CREATE INDEX idx_tenants_phone ON tenants(phone_primary);
+CREATE INDEX idx_tenants_property ON tenants(current_property_id);
+CREATE INDEX idx_tenants_status ON tenants(status);
+CREATE INDEX idx_tenants_id_number ON tenants(id_number);
+```
+
+#### Table: leases
+```sql
+CREATE TABLE leases (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  
+  -- Identification
+  lease_number VARCHAR(50) UNIQUE NOT NULL,
+  lease_type VARCHAR(50) CHECK (lease_type IN ('habitation', 'commercial', 'terrain')),
+  status VARCHAR(50) DEFAULT 'brouillon' CHECK (status IN ('brouillon', 'actif', 'expire', 'resilie', 'archive')),
+  
+  -- Parties
+  property_id UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  co_tenants JSONB, -- Array de {nom, cni}
+  
+  -- DurÃ©e
+  start_date DATE NOT NULL,
+  duration_months INT NOT NULL,
+  end_date DATE NOT NULL, -- CalculÃ© automatiquement
+  duration_type VARCHAR(50) CHECK (duration_type IN ('determinee', 'indeterminee')),
+  notice_period_months INT DEFAULT 1,
+  is_renewable BOOLEAN DEFAULT true,
+  renewal_conditions TEXT,
+  
+  -- Conditions financiÃ¨res
+  monthly_rent DECIMAL(15, 2) NOT NULL,
+  monthly_charges DECIMAL(15, 2) DEFAULT 0,
+  total_monthly DECIMAL(15, 2) NOT NULL, -- rent + charges
+  payment_day INT CHECK (payment_day BETWEEN 1 AND 31),
+  accepted_payment_methods TEXT[], -- Array: espÃ¨ces, virement, mobile_money
+  bank_details TEXT,
+  deposit_paid DECIMAL(15, 2),
+  deposit_payment_date DATE,
+  registration_fees_paid DECIMAL(15, 2),
+  registration_fees_payment_date DATE,
+  
+  -- RÃ©vision du loyer
+  rent_review_allowed BOOLEAN DEFAULT false,
+  review_frequency VARCHAR(50), -- annuelle, bisannuelle
+  review_index_percentage DECIMAL(5, 2),
+  next_review_date DATE,
+  
+  -- Ã‰tat des lieux d'entrÃ©e
+  entry_inspection_date DATE,
+  entry_inspection_general_condition VARCHAR(50),
+  entry_inspection_details JSONB, -- {piece: etat, equipements: [], observations}
+  entry_inspection_photos JSONB, -- Array d'URLs
+  entry_meter_readings JSONB, -- {eau: XXX, electricite: YYY}
+  entry_inspection_observations TEXT,
+  entry_landlord_signature_date DATE,
+  entry_tenant_signature_date DATE,
+  entry_inspection_document_url TEXT, -- PDF gÃ©nÃ©rÃ©
+  
+  -- Ã‰tat des lieux de sortie
+  exit_inspection_date DATE,
+  exit_inspection_general_condition VARCHAR(50),
+  exit_inspection_details JSONB,
+  exit_inspection_photos JSONB,
+  exit_meter_readings JSONB,
+  exit_damages JSONB, -- Array de {description, cout}
+  exit_repair_costs DECIMAL(15, 2) DEFAULT 0,
+  exit_inspection_observations TEXT,
+  exit_landlord_signature_date DATE,
+  exit_tenant_signature_date DATE,
+  exit_inspection_document_url TEXT,
+  
+  -- Clauses
+  property_usage TEXT,
+  prohibitions TEXT,
+  tenant_obligations TEXT,
+  landlord_obligations TEXT,
+  joint_liability_clause TEXT,
+  termination_clause TEXT,
+  penalty_clause TEXT,
+  late_payment_penalty_type VARCHAR(50) CHECK (late_payment_penalty_type IN ('pourcentage', 'montant_fixe')),
+  late_payment_penalty_value DECIMAL(10, 2),
+  deposit_return_conditions TEXT,
+  special_clauses TEXT,
+  
+  -- Signatures
+  landlord_signature_date DATE,
+  tenant_signature_date DATE,
+  is_signed BOOLEAN DEFAULT false,
+  signed_contract_url TEXT, -- PDF du contrat signÃ©
+  
+  -- Renouvellements et avenants
+  renewals JSONB, -- Array de {date, conditions, duree}
+  amendments JSONB, -- Array de {date, description, document_url}
+  
+  -- RÃ©siliation
+  termination_notice_date DATE,
+  termination_initiated_by VARCHAR(50) CHECK (termination_initiated_by IN ('bailleur', 'locataire')),
+  termination_reason VARCHAR(50),
+  termination_effective_date DATE,
+  notice_respected BOOLEAN,
+  termination_penalties DECIMAL(15, 2) DEFAULT 0,
+  deposit_returned DECIMAL(15, 2),
+  deposit_return_date DATE,
+  termination_observations TEXT,
+  
+  -- Timestamps et traÃ§abilitÃ©
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_by UUID REFERENCES users(id)
+);
+
+CREATE INDEX idx_leases_number ON leases(lease_number);
+CREATE INDEX idx_leases_property ON leases(property_id);
+CREATE INDEX idx_leases_tenant ON leases(tenant_id);
+CREATE INDEX idx_leases_status ON leases(status);
+CREATE INDEX idx_leases_dates ON leases(start_date, end_date);
+CREATE INDEX idx_leases_end_date ON leases(end_date) WHERE status = 'actif';
+```
+
+#### Table: payments
+```sql
+CREATE TABLE payments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  
+  -- Identification
+  receipt_number VARCHAR(50) UNIQUE NOT NULL,
+  lease_id UUID NOT NULL REFERENCES leases(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  property_id UUID NOT NULL REFERENCES properties(id),
+  
+  -- PÃ©riode et Ã©chÃ©ance
+  payment_month VARCHAR(7) NOT NULL, -- Format: 2025-01
+  due_date DATE NOT NULL,
+  payment_date DATE,
+  
+  -- Montants
+  rent_amount DECIMAL(15, 2) NOT NULL,
+  charges_amount DECIMAL(15, 2) DEFAULT 0,
+  total_due DECIMAL(15, 2) NOT NULL, -- rent + charges
+  amount_paid DECIMAL(15, 2) DEFAULT 0,
+  late_fee DECIMAL(15, 2) DEFAULT 0,
+  total_received DECIMAL(15, 2) DEFAULT 0, -- paid + late_fee
+  balance DECIMAL(15, 2) DEFAULT 0, -- total_due - amount_paid
+  
+  -- MÃ©thode de paiement
+  payment_method VARCHAR(50) CHECK (payment_method IN ('especes', 'virement', 'mobile_money', 'cheque')),
+  transaction_reference VARCHAR(200),
+  bank_name VARCHAR(200),
+  mobile_money_provider VARCHAR(100),
+  
+  -- Statut
+  status VARCHAR(50) DEFAULT 'en_attente' CHECK (status IN ('en_attente', 'paye', 'paye_partiellement', 'en_retard', 'annule')),
+  days_late INT DEFAULT 0, -- CalculÃ© automatiquement
+  
+  -- Gestion
+  received_by UUID REFERENCES users(id),
+  payment_notes TEXT,
+  receipt_url TEXT, -- PDF de la quittance
+  receipt_sent_at TIMESTAMP, -- Date d'envoi email/WhatsApp
+  
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_payments_receipt ON payments(receipt_number);
+CREATE INDEX idx_payments_lease ON payments(lease_id);
+CREATE INDEX idx_payments_tenant ON payments(tenant_id);
+CREATE INDEX idx_payments_property ON payments(property_id);
+CREATE INDEX idx_payments_month ON payments(payment_month);
+CREATE INDEX idx_payments_status ON payments(status);
+CREATE INDEX idx_payments_due_date ON payments(due_date);
+CREATE INDEX idx_payments_late ON payments(status, days_late) WHERE status = 'en_retard';
+```
+
+#### Table: payment_history
+```sql
+CREATE TABLE payment_history (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  payment_id UUID NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
+  amount_paid DECIMAL(15, 2) NOT NULL,
+  payment_date DATE NOT NULL,
+  payment_method VARCHAR(50),
+  transaction_reference VARCHAR(200),
+  received_by UUID REFERENCES users(id),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_payment_history_payment ON payment_history(payment_id);
+CREATE INDEX idx_payment_history_date ON payment_history(payment_date);
+```
+
+#### Table: expenses
+```sql
+CREATE TABLE expenses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  
+  -- Identification
+  expense_number VARCHAR(50) UNIQUE NOT NULL,
+  property_id UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  
+  -- CatÃ©gorie et type
+  category VARCHAR(100) NOT NULL,
+  type VARCHAR(50) CHECK (type IN ('recuperable', 'non_recuperable')),
+  
+  -- Montants
+  amount_ht DECIMAL(15, 2),
+  vat_amount DECIMAL(15, 2) DEFAULT 0,
+  amount_ttc DECIMAL(15, 2) NOT NULL,
+  currency VARCHAR(10) DEFAULT 'FBU',
+  
+  -- Paiement
+  payment_method VARCHAR(50) CHECK (payment_method IN ('especes', 'cheque', 'virement', 'carte')),
+  payment_reference VARCHAR(200),
+  expense_date DATE NOT NULL,
+  
+  -- Fournisseur
+  supplier_id UUID REFERENCES suppliers(id),
+  supplier_name VARCHAR(200),
+  supplier_phone VARCHAR(20),
+  supplier_email VARCHAR(255),
+  supplier_address TEXT,
+  
+  -- Description
+  description TEXT NOT NULL,
+  justification TEXT,
+  urgency VARCHAR(50) DEFAULT 'normale' CHECK (urgency IN ('normale', 'urgente')),
+  observations TEXT,
+  
+  -- Documents
+  invoice_url TEXT,
+  purchase_order_url TEXT,
+  quote_url TEXT,
+  photos JSONB, -- Array d'URLs
+  
+  -- Gestion et validation
+  status VARCHAR(50) DEFAULT 'en_attente' CHECK (status IN ('en_attente', 'validee', 'payee', 'refusee')),
+  validated_by UUID REFERENCES users(id),
+  validation_date TIMESTAMP,
+  paid_date DATE,
+  internal_notes TEXT,
+  
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_by UUID REFERENCES users(id)
+);
+
+CREATE INDEX idx_expenses_property ON expenses(property_id);
+CREATE INDEX idx_expenses_category ON expenses(category);
+CREATE INDEX idx_expenses_type ON expenses(type);
+CREATE INDEX idx_expenses_status ON expenses(status);
+CREATE INDEX idx_expenses_date ON expenses(expense_date);
+CREATE INDEX idx_expenses_supplier ON expenses(supplier_id);
+```
+
+#### Table: suppliers
+```sql
+CREATE TABLE suppliers (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name VARCHAR(200) NOT NULL,
+  specialties TEXT[], -- Array de spÃ©cialitÃ©s
+  phone_primary VARCHAR(20) NOT NULL,
+  phone_secondary VARCHAR(20),
+  email VARCHAR(255),
+  address TEXT,
+  average_rates TEXT,
+  rating DECIMAL(3, 2) CHECK (rating BETWEEN 0 AND 5),
+  total_interventions INT DEFAULT 0,
+  insurance_info TEXT,
+  certifications JSONB,
+  notes TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_suppliers_name ON suppliers(name);
+CREATE INDEX idx_suppliers_active ON suppliers(is_active);
+```
+
+#### Table: maintenance_tickets
+```sql
+CREATE TABLE maintenance_tickets (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  
+  -- Identification
+  ticket_number VARCHAR(50) UNIQUE NOT NULL,
+  property_id UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  tenant_id UUID REFERENCES tenants(id),
+  
+  -- CatÃ©gorie et prioritÃ©
+  category VARCHAR(100) NOT NULL CHECK (category IN ('plomberie', 'electricite', 'menuiserie', 'maconnerie', 'peinture', 'toiture', 'climatisation', 'serrurerie', 'vitrerie', 'nettoyage', 'jardinage', 'autres')),
+  priority VARCHAR(50) NOT NULL CHECK (priority IN ('urgente', 'haute', 'moyenne', 'basse')),
+  
+  -- Description
+  title VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  location VARCHAR(255), -- PiÃ¨ce/Ã©quipement concernÃ©
+  issue_date DATE NOT NULL,
+  symptoms TEXT,
+  photos_before JSONB, -- Array d'URLs
+  
+  -- Affectation
+  assigned_to UUID REFERENCES suppliers(id),
+  assignment_date TIMESTAMP,
+  scheduled_date DATE,
+  scheduled_time TIME,
+  estimated_duration INT, -- En heures
+  estimated_cost DECIMAL(15, 2),
+  
+  -- Suivi
+  status VARCHAR(50) DEFAULT 'nouveau' CHECK (status IN ('nouveau', 'en_attente', 'en_cours', 'termine', 'annule')),
+  start_date TIMESTAMP,
+  completion_date TIMESTAMP,
+  work_done TEXT,
+  materials_used TEXT,
+  photos_after JSONB,
+  actual_cost DECIMAL(15, 2),
+  invoice_url TEXT,
+  
+  -- Validation
+  validated_by UUID REFERENCES users(id),
+  validation_date TIMESTAMP,
+  quality_notes TEXT,
+  supplier_rating INT CHECK (supplier_rating BETWEEN 1 AND 5),
+  complaints TEXT,
+  
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_by UUID REFERENCES users(id)
+);
+
+CREATE INDEX idx_maintenance_property ON maintenance_tickets(property_id);
+CREATE INDEX idx_maintenance_status ON maintenance_tickets(status);
+CREATE INDEX idx_maintenance_priority ON maintenance_tickets(priority);
+CREATE INDEX idx_maintenance_category ON maintenance_tickets(category);
+CREATE INDEX idx_maintenance_assigned ON maintenance_tickets(assigned_to);
+CREATE INDEX idx_maintenance_dates ON maintenance_tickets(scheduled_date);
+```
+
+#### Table: documents
+```sql
+CREATE TABLE documents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  
+  -- Association
+  entity_type VARCHAR(50) NOT NULL CHECK (entity_type IN ('property', 'tenant', 'lease', 'payment', 'maintenance', 'expense', 'admin')),
+  entity_id UUID NOT NULL,
+  
+  -- Fichier
+  file_name VARCHAR(255) NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  file_path TEXT NOT NULL,
+  file_url TEXT NOT NULL,
+  file_size INT NOT NULL,
+  file_extension VARCHAR(20) NOT NULL,
+  mime_type VARCHAR(100) NOT NULL,
+  
+  -- Classification
+  category VARCHAR(100) NOT NULL,
+  tags TEXT[],
+  description TEXT,
+  
+  -- Versioning et Sécurité
+  version INT DEFAULT 1,
+  is_encrypted BOOLEAN DEFAULT false,
+  access_level VARCHAR(50) DEFAULT 'private' CHECK (access_level IN ('public', 'private', 'restricted')),
+  
+  -- Traçabilité
+  uploaded_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_documents_entity ON documents(entity_type, entity_id);
+CREATE INDEX idx_documents_category ON documents(category);
+CREATE INDEX idx_documents_uploaded_by ON documents(uploaded_by);
+```
+
+---
+
+## 6. APPLICATION MOBILE (React Native / Expo)
+
+### 6.1 Stack Technologique Mobile
+- **Framework:** React Native (v0.76+) avec Expo (v52+)
+- **Navigation:** Expo Router / React Navigation
+- **Stockage Sécurisé:** `expo-secure-store` (tokens JWT, données sensibles)
+- **UI & Style:** StyleSheet / Tailwind (NativeWind)
+- **Networking:** Axios / Fetch avec interceptors d'authentification
+
+### 6.2 Fonctionnalités de l'Application Mobile
+- **Authentification & Sécurité:**
+  - Connexion sécurisée (JWT stocké via SecureStore)
+  - Biométrie (FaceID / Fingerprint) pour accès rapide
+- **Tableau de Bord Mobile:**
+  - KPIs clés en temps réel (revenus, taux d'occupation, retards)
+  - Notifications push pour alertes urgentes et rappels d'échéance
+- **Gestion sur le Terrain:**
+  - Consultation rapide des biens assignés et des locataires
+  - Enregistrement des paiements (espèces / mobile money) avec génération/partage immédiat de quittance PDF via WhatsApp ou email
+  - Prise de photos directes pour les états des lieux et tickets de maintenance
+- **Mode Hors-ligne (Offline-First partiel):**
+  - Cache local des données consultées récemment
+  - Synchronisation automatique dès le retour de la connexion réseau
+
+---
+
+## 7. INTÉGRATIONS SPÉCIFIQUES BURUNDI
+
+### 7.1 Intégration Mobile Money (Ecocash & Lumicash)
+- **Objectif:** Automatiser le rapprochement des paiements de loyer effectués via les opérateurs télécoms au Burundi (Ecocash / Econet Wireless, Lumicash / Lumitel).
+- **Fonctionnalités:**
+  - Réception de webhooks de notification de paiement des opérateurs
+  - Rapprochement automatique de la transaction avec l'échéance du locataire (basé sur le numéro de téléphone ou la référence de transaction)
+  - Validation automatique du paiement et émission de la quittance PDF
+
+### 7.2 Conformité Fiscale et OBR (Office Burundais des Recettes)
+- **Objectif:** Respecter les réglementations fiscales en vigueur au Burundi pour les revenus locatifs.
+- **Fonctionnalités:**
+  - Calcul et suivi de la taxe foncière annuelle et des prélèvements fiscaux applicables
+  - Génération d'états financiers et de rapports exportables formatés pour les déclarations fiscales auprès de l'OBR
+  - Numérotation séquentielle inviolable des reçus et quittances pour traçabilité comptable et fiscale
